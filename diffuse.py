@@ -5,6 +5,7 @@ import cmd
 import os
 import argparse
 import torch
+import PIL
 
 # disable telemetry
 os.environ['DISABLE_TELEMETRY'] = 'YES'
@@ -56,7 +57,7 @@ Network access should only be needed to download custom pipelines or models. The
     splitter = re.compile(r'\s*,\s*')
     notprefix = '!'
 
-    def __init__(self, pipe, filegen, generator=None, batch=None, steps=None, guidance=None):
+    def __init__(self, pipe, filegen, width=None, height=None, generator=None, batch=None, steps=None, guidance=None, image=None, strength=None):
         super().__init__()
         self.pipe = pipe
         self.filegen = filegen
@@ -64,7 +65,13 @@ Network access should only be needed to download custom pipelines or models. The
         self.batch = batch
         self.steps = steps
         self.guidance = guidance
-        self.lastcmd = "1girl, aqua eyes, baseball cap, blonde hair, closed mouth, earrings, green background, hat, hoop earrings, jewelry, looking at viewer, shirt, short hair, simple background, solo, upper body, yellow shirt"
+        self.image = image
+        self.width = width
+        self.height = height
+        self.strength = strength
+        if self.image is None:
+            # skip the example prompt for image2image
+            self.lastcmd = "1girl, aqua eyes, baseball cap, blonde hair, closed mouth, earrings, green background, hat, hoop earrings, jewelry, looking at viewer, shirt, short hair, simple background, solo, upper body, yellow shirt"
 
     def default(self, line):
         if line == 'EOF':
@@ -87,6 +94,8 @@ Network access should only be needed to download custom pipelines or models. The
             num_inference_steps=self.steps,
             guidance_scale=self.guidance,
             generator=self.generator,
+            image=self.image,
+            strength=self.strength,
         )
         for i, image in enumerate(result.images):
             if result.nsfw_content_detected is not None and result.nsfw_content_detected[i]:
@@ -96,6 +105,8 @@ Network access should only be needed to download custom pipelines or models. The
                 print(f"saving to {os.path.relpath(filename)}")
                 image.save(filename)
 
+    def __str__(self):
+        return f"<DiffusionShell batch={self.batch} steps={self.steps} guidance={self.guidance} strength={self.strength} width={self.width} height={self.height}>"
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Stable Diffusion command shell, to quickly try prompts and generate large numbers of images')
@@ -117,9 +128,16 @@ def parse_args():
                         help='increase adherence to the prompt (at the cost of image quality, less than 1 disables the feature)')
     parser.add_argument('--semantic', action='store_true',
                         help='enable semantic guidance, providing more fine-grained control over the prompt')
-    # https://github.com/huggingface/diffusers/blob/main/examples/community/lpw_stable_diffusion.py
     parser.add_argument('--custom',
                         help='load a custom pipeline (community identifier or local path - try lpw_stable_diffusion for good results)')
+    parser.add_argument('--width', type=int, default=512,
+                        help='width of output images')
+    parser.add_argument('--height', type=int, default=512,
+                        help='height of output images')
+    parser.add_argument('--image',
+                        help='optional input image, for image2image generation')
+    parser.add_argument('--strength', type=float, default=0.75,
+                        help='influence of input image on result (ignored if no input image given, lower values = stronger influence)')
     return parser.parse_args()
 
 
@@ -133,6 +151,12 @@ if __name__ == '__main__':
 
     filegen = FileGen(basename=os.path.join(args.output, 'image-'), suffix='.png')
     filegen.make_dir()
+
+    image=None
+    if args.image is not None:
+        print(f"Loading input image {args.image}")
+        image = PIL.Image.open(args.image).convert("RGB")
+        image = image.resize((args.width, args.height))
 
     generator = None
     if args.seed is not None:
@@ -150,6 +174,17 @@ if __name__ == '__main__':
     pipe = DiffusionPipeline.from_pretrained(**params).to('cuda')
 
     try:
-        DiffusionShell(pipe, filegen, generator, args.batch, args.steps, args.guidance).cmdloop()
+        DiffusionShell(
+            pipe=pipe,
+            filegen=filegen,
+            generator=generator,
+            batch=args.batch,
+            steps=args.steps,
+            guidance=args.guidance,
+            image=image,
+            width=args.width,
+            height=args.height,
+            strength=args.strength,
+        ).cmdloop()
     except KeyboardInterrupt:
         print("Goodbye!")

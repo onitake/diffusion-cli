@@ -26,6 +26,10 @@ wget <url-to-lpw_stable_diffusion.py>
 git clone <repository-url-here>
 ```
 
+PyTorch for AMD GPUs requires the ROCm HIP runtime.
+See [AMD ROCm Release Documentation](https://docs.amd.com/category/Release%20Documentation)
+for installation instructions. The package is called: `rocm-hip-runtime`
+
 Then start the CLI with:
 ```
 pipenv run ./diffuse.py --batch 1 --model waifu-diffusion --custom lpw_stable_diffusion.py
@@ -38,6 +42,14 @@ On a GPU with sufficient VRAM, you can increase the batch size to generate
 multiple images in one go, with increased performance.
 
 `pipenv run ./diffuse.py --help` will show other supported options.
+
+## Image replacement
+
+Image replacement (or image2image mode) is also supported.
+
+Use the `--image` parameter to specify a starting image, and control the influence
+with `--strength`. Lower values correspond with a stronger influence.
+The valid range is from 0.0 to 1.0.
 
 ## Other GPUs or operating systems
 
