@@ -138,6 +138,8 @@ def parse_args():
                         help='optional input image, for image2image generation')
     parser.add_argument('--strength', type=float, default=0.75,
                         help='influence of input image on result (ignored if no input image given, lower values = stronger influence)')
+    parser.add_argument('--cpu', action='store_true',
+                        help='process on CPU (instead of GPU)')
     return parser.parse_args()
 
 
@@ -164,14 +166,20 @@ if __name__ == '__main__':
 
     params = {
         'pretrained_model_name_or_path': args.model,
-        'torch_dtype': torch.float32 if args.full else torch.float16,
     }
+    if args.full or args.cpu:
+        # Torch doesn't support FP16 on CPU
+        params['torch_dtype'] = torch.float32
+    else:
+        params['torch_dtype'] = torch.float16
     if args.nsfw:
         # can't pass this directly due to the way the SafetyChecker is instantiated
         params['safety_checker'] = None
     if args.custom is not None:
         params['custom_pipeline'] = args.custom
-    pipe = DiffusionPipeline.from_pretrained(**params).to('cuda')
+    pipe = DiffusionPipeline.from_pretrained(**params)
+    if not args.cpu:
+        pipe = pipe.to('cuda')
 
     try:
         DiffusionShell(

@@ -53,6 +53,16 @@ The valid range is from 0.0 to 1.0.
 
 ## Other GPUs or operating systems
 
+Depending on the target platform, you need to use a different PyTorch flavor.
+The default is ROCm for AMD GPUs.
+
+Refer to https://pytorch.org/get-started/locally/ for other options.
+
+Once you've modified the `Pipfile`, you need to run `pipenv install` to
+download the new PyTorch framework.
+
+### NVIDIA CUDA
+
 In `Pipfile`, Replace the line that says
 ```
 torch = {version = "*", index = "pytorch"}
@@ -62,5 +72,13 @@ with
 torch = "*"
 ```
 
-On the next `pipenv install` or `pipenv run`, this will download the vanilla
-PyTorch framework with CUDA support instead of the ROCm version.
+### CPU only
+
+In `Pipfile`, Replace the line that says
+```
+url = "https://download.pytorch.org/whl/rocm5.2/"
+```
+with
+```
+url = "https://download.pytorch.org/whl/cpu/"
+```
