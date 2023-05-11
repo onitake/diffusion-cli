@@ -12,7 +12,8 @@ os.environ['DISABLE_TELEMETRY'] = 'YES'
 # enable local mode
 os.environ['HF_HUB_OFFLINE'] = 'YES'
 
-from diffusers import DiffusionPipeline
+from diffusers import DiffusionPipeline  # noqa: E402
+
 
 class FileGen(object):
     def __init__(self, suffix='', basename='', digits=4, maximum=9999):
@@ -96,6 +97,8 @@ Network access should only be needed to download custom pipelines or models. The
             generator=self.generator,
             image=self.image,
             strength=self.strength,
+            width=self.width,
+            height=self.height,
         )
         for i, image in enumerate(result.images):
             if result.nsfw_content_detected is not None and result.nsfw_content_detected[i]:
@@ -162,7 +165,11 @@ if __name__ == '__main__':
 
     generator = None
     if args.seed is not None:
-        generator = torch.Generator("cuda").manual_seed(args.seed)
+        if args.cpu:
+            generator = torch.Generator("cpu")
+        else:
+            generator = torch.Generator("cuda")
+        generator = generator.manual_seed(args.seed)
 
     params = {
         'pretrained_model_name_or_path': args.model,
