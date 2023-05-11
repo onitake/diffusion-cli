@@ -5,7 +5,7 @@ import cmd
 import os
 import argparse
 import torch
-import PIL
+import PIL.Image
 
 # disable telemetry
 os.environ['DISABLE_TELEMETRY'] = 'YES'
@@ -31,14 +31,12 @@ class FileGen(object):
         os.makedirs(directory, exist_ok=True)
 
     def next_file(self):
-        exists = True
-        while exists:
+        filename = self._next()
+        while os.path.exists(filename):
+            self.counter += 1
+            if self.counter > self.maximum:
+                raise RuntimeError('Maxiumum counter value {self.maximum} exceeded')
             filename = self._next()
-            exists = os.path.exists(filename)
-            if exists:
-                self.counter += 1
-                if self.counter > self.maximum:
-                    raise RuntimeError('Maxiumum counter value {self.maximum} exceeded')
         return filename
 
 
