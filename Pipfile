@@ -9,10 +9,11 @@ verify_ssl = true
 name = "pytorch"
 
 [packages]
-torch = {version = "*", index = "pytorch"}
-diffusers = "*"
-transformers = "*"
-accelerate = "*"
+torch = {version = "~=2.0", index = "pytorch"}
+diffusers = "~=0.16"
+transformers = "~=4.28"
+accelerate = "~=0.18"
+pillow = "~=9.5"
 
 [dev-packages]
 
