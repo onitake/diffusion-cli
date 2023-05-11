@@ -4,15 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [[source]]
-url = "https://download.pytorch.org/whl/rocm5.2/"
+url = "https://download.pytorch.org/whl/rocm5.4.2/"
 verify_ssl = true
 name = "pytorch"
+
+[pipenv]
+allow_prereleases = true
 
 [packages]
 torch = {version = "~=2.0", index = "pytorch"}
 diffusers = "~=0.16"
 transformers = "~=4.28"
 accelerate = "~=0.18"
+safetensors = "~=0.3"
 pillow = "~=9.5"
 
 [dev-packages]

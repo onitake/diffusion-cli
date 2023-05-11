@@ -141,11 +141,18 @@ def parse_args():
                         help='influence of input image on result (ignored if no input image given, lower values = stronger influence)')
     parser.add_argument('--cpu', action='store_true',
                         help='process on CPU (instead of GPU)')
+    parser.add_argument('--paranoia', action='store_true',
+                        help='enable paranoia mode (requires models in safetensors format)')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
+
+    if args.paranoia:
+        def _raise():
+            raise RuntimeError("Pickled models are not supported. See https://huggingsface.co/docs/diffusers/main/en/using-diffusers/using_safetensors and https://rentry.co/safetensorsguide for more information on how to obtain or convert existing models.")
+        torch.load = lambda *args, **kwargs: _raise()
 
     if args.semantic:
         # https://huggingface.co/docs/diffusers/api/pipelines/semantic_stable_diffusion for usage.
@@ -171,6 +178,7 @@ if __name__ == '__main__':
 
     params = {
         'pretrained_model_name_or_path': args.model,
+        'use_safetensors': args.paranoia,
     }
     if args.full or args.cpu:
         # Torch doesn't support FP16 on CPU
@@ -178,7 +186,6 @@ if __name__ == '__main__':
     else:
         params['torch_dtype'] = torch.float16
     if args.nsfw:
-        # can't pass this directly due to the way the SafetyChecker is instantiated
         params['safety_checker'] = None
     if args.custom is not None:
         params['custom_pipeline'] = args.custom
