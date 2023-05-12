@@ -86,20 +86,24 @@ Network access should only be needed to download custom pipelines or models. The
             else:
                 pos.append(prompt)
         print(f"positive prompt: {', '.join(pos)}\nnegative prompt: {', '.join([f'!{el}' for el in neg])}")
-        result = self.pipe(
-            prompt=' '.join(pos),
-            negative_prompt=' '.join(neg),
-            num_images_per_prompt=self.batch,
-            num_inference_steps=self.steps,
-            guidance_scale=self.guidance,
-            generator=self.generator,
-            image=self.image,
-            strength=self.strength,
-            width=self.width,
-            height=self.height,
-        )
+        params = {
+            'prompt': ' '.join(pos),
+            'negative_prompt': ' '.join(neg),
+            'num_images_per_prompt': self.batch,
+            'num_inference_steps': self.steps,
+            'guidance_scale': self.guidance,
+            'generator': self.generator,
+        }
+        if self.image:
+            params['image'] = self.image
+            params['strength'] = self.strength
+        else:
+            params['width'] = self.width
+            params['height'] = self.height
+        result = self.pipe(**params)
         for i, image in enumerate(result.images):
-            if result.nsfw_content_detected is not None and result.nsfw_content_detected[i]:
+            # this flag is a right PITA - every pipeline uses it differently
+            if self._is_nsfw(result.nsfw_content_detected, i):
                 print("skipping NSFW image")
             else:
                 filename = self.filegen.next_file()
@@ -108,6 +112,14 @@ Network access should only be needed to download custom pipelines or models. The
 
     def __str__(self):
         return f"<DiffusionShell batch={self.batch} steps={self.steps} guidance={self.guidance} strength={self.strength} width={self.width} height={self.height}>"
+
+    def _is_nsfw(self, flag, index):
+        if flag is None:
+            return False
+        if type(flag) == bool:
+            return flag
+        return flag[index]
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Stable Diffusion command shell, to quickly try prompts and generate large numbers of images')
