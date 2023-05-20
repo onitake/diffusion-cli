@@ -12,7 +12,7 @@ os.environ['DISABLE_TELEMETRY'] = 'YES'
 # enable local mode
 os.environ['HF_HUB_OFFLINE'] = 'YES'
 
-from diffusers import DiffusionPipeline  # noqa: E402
+import diffusers  # noqa: E402
 
 
 class FileGen(object):
@@ -201,7 +201,10 @@ if __name__ == '__main__':
         params['safety_checker'] = None
     if args.custom is not None:
         params['custom_pipeline'] = args.custom
-    pipe = DiffusionPipeline.from_pretrained(**params)
+    if args.image:
+        pipe = diffusers.StableDiffusionImg2ImgPipeline.from_pretrained(**params)
+    else:
+        pipe = diffusers.DiffusionPipeline.from_pretrained(**params)
     if not args.cpu:
         pipe = pipe.to('cuda')
 
