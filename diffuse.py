@@ -155,6 +155,9 @@ def parse_args():
                         help='process on CPU (instead of GPU)')
     parser.add_argument('--paranoia', action='store_true',
                         help='enable paranoia mode (requires models in safetensors format)')
+    parser.add_argument('--variant',
+                        help='load a specific variant of a model (some models also require this to ensure the fp16 version of a model is loaded)')
+
     return parser.parse_args()
 
 
@@ -201,6 +204,8 @@ if __name__ == '__main__':
         params['safety_checker'] = None
     if args.custom is not None:
         params['custom_pipeline'] = args.custom
+    if args.variant:
+        params['variant'] = args.variant
     if args.image:
         pipe = diffusers.StableDiffusionImg2ImgPipeline.from_pretrained(**params)
     else:
